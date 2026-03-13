@@ -1,0 +1,440 @@
+// GMSA UDS NYC - Prisma Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  PRO
+  SECRETARY
+  WOCOM
+  IMAM
+  MEMBER
+  VISITOR
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DonationProject {
+  WEEKLY_PROJECT    // GHS 2.00
+  MASJID_RENOVATION
+  FIISABIDILLAH
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  username     String?   @unique // optional; sign in with username or email
+  passwordHash String    @map("password_hash")
+  name             String
+  phone            String?   // active contact
+  whatsappContact  String?   @map("whatsapp_contact")
+  gender           Gender?
+  level            String?   // e.g. 100, 200, 300, 400
+  programOfStudy   String?   @map("program_of_study")
+  role         Role      @default(MEMBER)
+  isAlumni     Boolean   @default(false) @map("is_alumni")
+  isExecutive  Boolean   @default(false) @map("is_executive")
+  position     String?   // executive position if any
+  avatarUrl    String?   @map("avatar_url")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  executiveProfile   Executive?
+  announcements      Announcement[]
+  eventRegistrations EventRegistration[]
+  memberProfile      Member?
+  madrasaRegistrations MadrasaRegistration[]
+  alumniProfile      Alumni?
+  galleryUploads     Gallery[]         @relation("GalleryUploader")
+  blogPosts          BlogPost[]
+  blogLikes          BlogLike[]
+  blogComments       BlogComment[]
+  blogReshares       BlogReshare[]
+  donations          Donation[]
+  approvedMembers    Member[]          @relation("ApprovedBy")
+  approvedAlumni     Alumni[]          @relation("ApprovedBy")
+  smsLogs            SmsLog[]
+  prayerTimetables   PrayerTimetable[]
+  khutbahMaterials   KhutbahMaterial[]
+  learningMaterials  LearningMaterial[]
+  executiveDiscussionMessages ExecutiveDiscussionMessage[]
+  ladiesTaalimSessions       LadiesTaalimSession[]
+  ladiesPrograms             LadiesProgram[]
+  ladiesDiscussionMessages   LadiesDiscussionMessage[]
+  coursesCreated             Course[]
+
+  @@map("users")
+}
+
+model Executive {
+  id           String    @id @default(cuid())
+  userId       String    @unique @map("user_id")
+  position     String
+  order        Int       @default(0) // display order
+  academicYear String?   @map("academic_year") // e.g. "2026/2027" — which year set this executive belongs to
+  tenureStart  DateTime  @map("tenure_start")
+  tenureEnd    DateTime? @map("tenure_end")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("executives")
+}
+
+model ExecutiveDiscussionMessage {
+  id        String   @id @default(cuid())
+  authorId  String   @map("author_id")
+  body      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  @@map("executive_discussion_messages")
+}
+
+model Announcement {
+  id            String    @id @default(cuid())
+  title         String
+  body          String    @db.Text
+  coverImageUrl String?   @map("cover_image_url")
+  authorId      String    @map("author_id")
+  publishedAt   DateTime  @default(now()) @map("published_at")
+  priority      Int       @default(0) // higher = more important
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  @@map("announcements")
+}
+
+model Event {
+  id                    String    @id @default(cuid())
+  title                 String
+  description           String?   @db.Text
+  venue                 String?
+  startAt               DateTime  @map("start_at")
+  endAt                 DateTime? @map("end_at")
+  imageUrl              String?   @map("image_url")
+  registrationRequired  Boolean   @default(false) @map("registration_required")
+  maxAttendees          Int?      @map("max_attendees")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  registrations EventRegistration[]
+  @@map("events")
+}
+
+model EventRegistration {
+  id        String           @id @default(cuid())
+  eventId   String           @map("event_id")
+  userId    String           @map("user_id")
+  status    RegistrationStatus @default(PENDING)
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([eventId, userId])
+  @@map("event_registrations")
+}
+
+// Member = student signup; User has email/phone/whatsapp for Gmail, bulk SMS, WhatsApp. Learning record tracker can add a separate model (e.g. LearningRecord) linked to User/Member later.
+model Member {
+  id           String           @id @default(cuid())
+  userId       String           @unique @map("user_id")
+  status       RegistrationStatus @default(PENDING)
+  approvedById String?          @map("approved_by_id")
+  approvedAt   DateTime?        @map("approved_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy User?  @relation("ApprovedBy", fields: [approvedById], references: [id])
+  @@map("members")
+}
+
+model MadrasaSession {
+  id          String    @id @default(cuid())
+  title       String
+  dayOfWeek   Int       @map("day_of_week") // 0-6
+  time        String    // e.g. "14:00"
+  description String?   @db.Text
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  registrations MadrasaRegistration[]
+  @@map("madrasa_sessions")
+}
+
+model MadrasaRegistration {
+  id        String           @id @default(cuid())
+  sessionId String           @map("session_id")
+  userId    String           @map("user_id")
+  status    RegistrationStatus @default(PENDING)
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  session MadrasaSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([sessionId, userId])
+  @@map("madrasa_registrations")
+}
+
+model Alumni {
+  id             String    @id @default(cuid())
+  userId         String    @unique @map("user_id")
+  yearCompleted  Int?      @map("year_completed")
+  occupation     String?
+  status         RegistrationStatus @default(PENDING)
+  approvedById   String?   @map("approved_by_id")
+  approvedAt     DateTime? @map("approved_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy User? @relation("ApprovedBy", fields: [approvedById], references: [id])
+  @@map("alumni")
+}
+
+model GalleryAlbum {
+  id            String    @id @default(cuid())
+  name          String
+  coverImageUrl String?   @map("cover_image_url")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  images Gallery[]
+  @@map("gallery_albums")
+}
+
+model Gallery {
+  id           String    @id @default(cuid())
+  albumId      String    @map("album_id")
+  title        String?
+  imageUrl     String    @map("image_url")
+  uploadedById String    @map("uploaded_by_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  album     GalleryAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  uploadedBy User        @relation("GalleryUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  @@map("gallery")
+}
+
+model PrayerTimetable {
+  id          String    @id @default(cuid())
+  title       String
+  fileUrl     String    @map("file_url")
+  periodStart DateTime  @map("period_start")
+  periodEnd   DateTime  @map("period_end")
+  uploadedById String   @map("uploaded_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  uploadedBy User @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  @@map("prayer_timetables")
+}
+
+model KhutbahMaterial {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  fileUrl     String    @map("file_url")
+  date        DateTime?
+  uploadedById String   @map("uploaded_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  uploadedBy User @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  @@map("khutbah_materials")
+}
+
+model LearningMaterial {
+  id           String    @id @default(cuid())
+  title        String
+  description  String?   @db.Text
+  fileUrl      String    @map("file_url")
+  category     String?
+  uploadedById String    @map("uploaded_by_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  uploadedBy User @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  @@map("learning_materials")
+}
+
+model BlogPost {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  body          String    @db.Text
+  authorId      String    @map("author_id")
+  coverImageUrl String?   @map("cover_image_url")
+  publishedAt   DateTime? @map("published_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  author   User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    BlogLike[]
+  comments BlogComment[]
+  reshares BlogReshare[]
+  @@map("blog_posts")
+}
+
+model BlogLike {
+  id        String   @id @default(cuid())
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([postId, userId])
+  @@map("blog_likes")
+}
+
+model BlogComment {
+  id        String   @id @default(cuid())
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  body      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("blog_comments")
+}
+
+model BlogReshare {
+  id        String   @id @default(cuid())
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([postId, userId])
+  @@map("blog_reshares")
+}
+
+model Suggestion {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String   @db.Text
+  isPublic  Boolean  @default(false) @map("is_public")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("suggestions")
+}
+
+model Donation {
+  id              String           @id @default(cuid())
+  userId          String?          @map("user_id")
+  amount          Float
+  projectType    DonationProject  @map("project_type")
+  donorName      String?          @map("donor_name")
+  donorReference String?          @map("donor_reference") // e.g. "In memory of...", ref number
+  reference      String?          // Paystack payment reference
+  status         String           @default("pending") // pending, completed, failed
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  @@map("donations")
+}
+
+model SmsLog {
+  id             String   @id @default(cuid())
+  recipientGroup String   @map("recipient_group") // e.g. executives, level_100, alumni
+  recipientCount Int      @map("recipient_count")
+  message        String   @db.Text
+  sentById       String   @map("sent_by_id")
+  sentAt         DateTime @default(now()) @map("sent_at")
+
+  sentBy User @relation(fields: [sentById], references: [id], onDelete: Cascade)
+  @@map("sms_logs")
+}
+
+// WOCOM: ladies programs and private discussion
+enum LadiesProgramType {
+  TAALIM
+  OTHER
+}
+
+model LadiesProgram {
+  id          String           @id @default(cuid())
+  title       String
+  description String?          @db.Text
+  type        LadiesProgramType @default(TAALIM)
+  scheduledAt DateTime?        @map("scheduled_at")
+  venue       String?
+  createdById String           @map("created_by_id")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  @@map("ladies_programs")
+}
+
+model LadiesTaalimSession {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  scheduledAt DateTime? @map("scheduled_at")
+  venue       String?
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  @@map("ladies_taalim_sessions")
+}
+
+model LadiesDiscussionMessage {
+  id        String   @id @default(cuid())
+  authorId  String   @map("author_id")
+  body      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  @@map("ladies_discussion_messages")
+}
+
+// Imam: courses with cover image and lecture materials
+model Course {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?   @db.Text
+  coverImageUrl String?   @map("cover_image_url")
+  createdById   String    @map("created_by_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  createdBy  User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  materials  CourseMaterial[]
+  @@map("courses")
+}
+
+model CourseMaterial {
+  id        String   @id @default(cuid())
+  courseId  String   @map("course_id")
+  title     String
+  fileUrl   String?  @map("file_url") // optional for placeholder; can add file later
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  @@map("course_materials")
+}

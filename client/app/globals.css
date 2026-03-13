@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gmsa-green: #16a34a;
+  --gmsa-green-light: #22c55e;
+  --gmsa-green-dark: #15803d;
+  --gmsa-white: #ffffff;
+}
+
+body {
+  @apply bg-white text-gray-900 antialiased;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gmsa-green hover:bg-gmsa-green-dark text-white font-medium px-4 py-2 rounded-lg transition-colors;
+  }
+  .btn-secondary {
+    @apply border-2 border-gmsa-green text-gmsa-green hover:bg-gmsa-green hover:text-white font-medium px-4 py-2 rounded-lg transition-colors;
+  }
+  .card {
+    @apply bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden;
+  }
+}
+
+/* Hero slideshow & motion */
+@keyframes hero-bg {
+  from { transform: translate(0, 0); }
+  to { transform: translate(24px, 24px); }
+}
+
+.hero-bg-pattern {
+  background: radial-gradient(circle at 50% 50%, white 1px, transparent 1px);
+  background-size: 24px 24px;
+  animation: hero-bg 60s linear infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.hero-icon-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.hero-icon-delay-1 { animation-delay: 0.2s; }
+.hero-icon-delay-2 { animation-delay: 0.4s; }
+
+@keyframes slide-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-icons {
+  animation: slide-up-in 0.8s ease-out both;
+}
