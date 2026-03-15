@@ -95,9 +95,9 @@ export function DetailModal({ isOpen, onClose, type, id }: DetailModalProps) {
         <div className="flex-1 overflow-y-auto p-4">
           {loading && <p className="text-gray-500 text-center py-8">Loading...</p>}
           {error && <p className="text-red-600 text-center py-8">Failed to load content.</p>}
-          {!loading && !error && data && (
+          {!loading && !error && data ? (
             <DetailContent type={type} data={data} onClose={onClose} />
-          )}
+          ) : null}
         </div>
       </div>
     </div>

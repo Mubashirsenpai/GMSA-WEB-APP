@@ -16,9 +16,10 @@ export function ExecutiveGuard({ children }: { children: React.ReactNode }) {
     }
     auth
       .me()
-      .then((u: { isExecutive?: boolean; role?: string }) => {
-        if (u.isExecutive === true) setOk(true);
-        else if (u.role === "ADMIN") setOk(true);
+      .then((u: unknown) => {
+        const user = u as { isExecutive?: boolean; role?: string };
+        if (user.isExecutive === true) setOk(true);
+        else if (user.role === "ADMIN") setOk(true);
         else router.replace("/");
       })
       .catch(() => router.replace("/login"));

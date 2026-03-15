@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function DonateSuccessPage() {
+function DonateSuccessContent() {
   const searchParams = useSearchParams();
   const reference = searchParams.get("reference");
   const [status, setStatus] = useState<"loading" | "completed" | "failed" | "error">("loading");
@@ -75,5 +75,17 @@ export default function DonateSuccessPage() {
       <Link href="/donate" className="btn-secondary mr-2">Donate again</Link>
       <Link href="/" className="btn-primary">Back to home</Link>
     </div>
+  );
+}
+
+export default function DonateSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-12 max-w-lg text-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    }>
+      <DonateSuccessContent />
+    </Suspense>
   );
 }

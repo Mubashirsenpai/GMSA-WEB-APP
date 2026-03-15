@@ -16,8 +16,8 @@ export interface ContentCardProps {
   updatedAt?: string | null;
   /** When the item was created (ISO string); used for relative time if updatedAt not set */
   createdAt?: string | null;
-  /** Link for "View details" (used when onViewDetailsClick is not provided) */
-  viewDetailsHref: string;
+  /** Link for "View details" (optional for dashboard-only cards) */
+  viewDetailsHref?: string;
   /** When provided, "View details" opens in a popup instead of navigating */
   onViewDetailsClick?: () => void;
   /** Secondary action: Register (e.g. events) or Download (e.g. timetables, materials) */
@@ -72,7 +72,7 @@ export function ContentCard({
               <ExternalLink className="w-4 h-4" />
               View details
             </button>
-          ) : (
+          ) : viewDetailsHref ? (
             <Link
               href={viewDetailsHref}
               className="btn-secondary inline-flex items-center gap-1.5 text-sm py-2 px-3"
@@ -80,7 +80,7 @@ export function ContentCard({
               <ExternalLink className="w-4 h-4" />
               View details
             </Link>
-          )}
+          ) : null}
           {secondaryAction && (
             <a
               href={secondaryAction.href}

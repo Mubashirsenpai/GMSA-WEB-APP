@@ -10,7 +10,7 @@ function escapeCsvValue(value: unknown): string {
 export function buildCsv(rows: Record<string, unknown>[], columns: { key: string; label: string }[]): string {
   const header = columns.map((c) => escapeCsvValue(c.label)).join(",");
   const body = rows
-    .map((row) => columns.map((c) => escapeCsvValue(row[c])).join(","))
+    .map((row) => columns.map((c) => escapeCsvValue(row[c.key])).join(","))
     .join("\n");
   return `${header}\n${body}`;
 }
