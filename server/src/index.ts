@@ -133,8 +133,7 @@ app.use("/api/executive/discussions", executiveDiscussionRoutes);
 app.get("/", (_req, res) =>
   res.json({
     ok: true,
-    message: "GMSA UDS Nyankpala API",
-    docs: "Use /api/* endpoints. Health: /api/health",
+    message: "gmsaudsnyc server is running",
   })
 );
 app.get("/api/health", (_req, res) => res.json({ ok: true }));

@@ -163,10 +163,15 @@ Create a PostgreSQL database (e.g. on Railway or Render) and copy the connection
 
 ### 3. Frontend (Vercel)
 
-- Import the repo. Set **root directory** to `client` if needed.
-- **Build**: `npm run build`
-- **Env**: Set `NEXT_PUBLIC_API_URL` to your backend API base URL (e.g. `https://your-api.railway.app/api` or `https://your-api.onrender.com/api`). The client uses this for API and Socket.io in production.
-- In **Next.js config**, rewrites to `/api` only work when the API is on the same host; for a separate API host you rely on `NEXT_PUBLIC_API_URL`.
+1. Go to [vercel.com](https://vercel.com) → **Add New** → **Project** → Import your GitHub repo (`GMSA-WEB-APP`).
+2. **Root Directory**: Click **Edit** next to the repo name and set **Root Directory** to `client`. (Only the Next.js app is deployed; the backend stays on Render.)
+3. **Build & development**: Leave as auto-detected (**Build Command**: `npm run build`, **Output Directory**: `.next`).
+4. **Environment variables**: Add one variable:
+   - **Name**: `NEXT_PUBLIC_API_URL`  
+   - **Value**: `https://gmsaudsnyc.onrender.com/api`  
+   (Use your real Render backend URL if different.)
+5. Click **Deploy**. When it finishes, you get a URL like `https://gmsa-web-app-xxx.vercel.app`.
+6. **CORS**: In your **Render** backend service → **Environment**, set **FRONTEND_URL** to your Vercel URL (e.g. `https://gmsa-web-app-xxx.vercel.app`). If you already have a value, add the Vercel URL comma-separated, e.g. `https://your-app.vercel.app,http://localhost:3000`. Save and redeploy the backend so API and Socket.io accept requests from the frontend.
 
 ### 4. Next.js rewrites (production)
 
