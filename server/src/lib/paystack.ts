@@ -49,15 +49,15 @@ export async function initializeTransaction(payload: InitializePayload): Promise
       metadata: payload.metadata,
     }),
   });
-  const data = await res.json();
+  const data = (await res.json()) as { status?: boolean; data?: { authorization_url?: string; access_code?: string; reference?: string } };
   if (!data.status || !data.data?.authorization_url) {
     console.error("Paystack initialize error:", data);
     return null;
   }
   return {
     authorization_url: data.data.authorization_url,
-    access_code: data.data.access_code,
-    reference: data.data.reference,
+    access_code: data.data.access_code ?? "",
+    reference: data.data.reference ?? "",
   };
 }
 
@@ -74,13 +74,13 @@ export async function verifyTransaction(reference: string): Promise<VerifyResult
     method: "GET",
     headers: { Authorization: `Bearer ${key}` },
   });
-  const data = await res.json();
+  const data = (await res.json()) as { status?: boolean; data?: { status?: string; reference?: string; amount?: number } };
   if (!data.status || !data.data) return null;
   const d = data.data;
   const paid = d.status === "success";
   return {
     status: paid ? "success" : "failed",
-    reference: d.reference,
+    reference: d.reference ?? "",
     amount: (d.amount || 0) / 100, // pesewas to GHS
   };
 }

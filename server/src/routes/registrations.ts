@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { body, validationResult } from "express-validator";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { authMiddleware, requireRole } from "../middleware/auth";
 
@@ -131,7 +132,7 @@ router.post(
     if (req.body.gender) updateData.gender = req.body.gender;
     if (req.body.programOfStudy !== undefined) updateData.programOfStudy = req.body.programOfStudy || null;
     if (Object.keys(updateData).length > 0) {
-      await prisma.user.update({ where: { id: userId }, data: updateData });
+      await prisma.user.update({ where: { id: userId }, data: updateData as Prisma.UserUpdateInput });
     }
     const alumni = await prisma.alumni.create({
       data: {

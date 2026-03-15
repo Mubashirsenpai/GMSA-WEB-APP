@@ -7,7 +7,7 @@ import { authMiddleware } from "../middleware/auth";
 import { Role } from "@prisma/client";
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET!;
+const JWT_SECRET = (process.env.JWT_SECRET || "") as string;
 const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || "7d";
 
 router.post(
@@ -93,8 +93,8 @@ router.post(
 
       const token = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRES }
+        JWT_SECRET as jwt.Secret,
+        { expiresIn: JWT_EXPIRES } as jwt.SignOptions
       );
       res.json({
         user: {
