@@ -130,6 +130,13 @@ app.use("/api/courses", coursesRoutes);
 app.use("/api/imam", imamRoutes);
 app.use("/api/executive/discussions", executiveDiscussionRoutes);
 
+app.get("/", (_req, res) =>
+  res.json({
+    ok: true,
+    message: "GMSA UDS Nyankpala API",
+    docs: "Use /api/* endpoints. Health: /api/health",
+  })
+);
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 const httpServer = http.createServer(app);
